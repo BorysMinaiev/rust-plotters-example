@@ -1,30 +1,51 @@
-use plotters::prelude::*;
+use druid::widget::{Button, Flex, Label};
+use druid::{AppLauncher, LocalizedString, PlatformError, Widget, WidgetExt, WindowDesc, Point, Size, AppDelegate, Application};
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let root = BitMapBackend::new("0.png", (640, 480)).into_drawing_area();
-    root.fill(&WHITE)?;
-    let mut chart = ChartBuilder::on(&root)
-        .caption("y=x^2", ("sans-serif", 50).into_font())
-        .margin(5)
-        .x_label_area_size(30)
-        .y_label_area_size(30)
-        .build_cartesian_2d(-1f32..1f32, -0.1f32..1f32)?;
+struct Delegate;
 
-    chart.configure_mesh().draw()?;
+impl AppDelegate<i32> for Delegate {
+    fn window_added(
+        &mut self,
+        _id: druid::WindowId,
+        _data: &mut i32,
+        _env: &druid::Env,
+        _ctx: &mut druid::DelegateCtx,
+    ) {}
 
-    chart
-        .draw_series(LineSeries::new(
-            (-50..=50).map(|x| x as f32 / 50.0).map(|x| (x, x * x)),
-            &RED,
-        ))?
-        .label("y = x^2")
-        .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], &RED));
+    fn window_removed(
+        &mut self,
+        _id: druid::WindowId,
+        _data: &mut i32,
+        _env: &druid::Env,
+        _ctx: &mut druid::DelegateCtx,
+    ) {
+        Application::global().quit();
+    }
+}
 
-    chart
-        .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
-        .draw()?;
 
-    Ok(())
+fn main() -> Result<(), PlatformError> {
+    let main_window = WindowDesc::new(ui_builder)
+        .set_position(Point { x: 500.0, y: 200.0 })
+        .window_size(Size { width: 500.0, height: 500.0 }).title("hello!");
+    let data = 0;
+    AppLauncher::with_window(main_window).delegate(Delegate)
+        .use_simple_logger()
+        .launch(data)
+}
+
+fn ui_builder() -> impl Widget<i32> {
+    // The label text will be computed dynamically based on the current locale and count
+    let text =
+        LocalizedString::new("hello-counter").with_arg("count", |data: &i32, _env| (*data).into());
+    let label = Label::new(text).padding(5.0).center();
+    let button = Button::new("increment")
+        .on_click(|_ctx, data, _env| *data += 1)
+        .padding(5.0);
+
+    let button2 = Button::new("decrement")
+        .on_click(|_ctx, data, _env| *data -= 1)
+        .padding(5.0);
+
+    Flex::column().with_child(label).with_child(button).with_child(button2)
 }
